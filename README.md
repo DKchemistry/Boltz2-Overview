@@ -80,5 +80,103 @@ export BOLTZ_CACHE=/mnt/data/dk/.cache/boltz
 
 Here, we'll set up some basic examples of how to run Boltz2 on this machine. 
 
-For our protein target, we'll use B2AR.
+#### MSA Generation For An Example Protein
+
+For our protein target, we'll use B2AR, sourced from (UniProt)[https://rest.uniprot.org/unisave/P07550?format=fasta&versions=258].
+
+I've saved the fasta file to: `./fasta/B2AR.fasta`
+
+Now, we need to make the MSA.
+
+From our current directory, we'll activate the env: 
+
+```sh
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate /mnt/data/dk/msa-env
+```
+We'll save our results to `./msa` and we'll use the default settings:
+
+```sh
+colabfold_search fasta/B2AR.fasta /mnt/data/dk/colabfold_db msa
+```
+This generated `msa/sp_P07550_ADRB2_HUMAN_Beta-2_adrenergic_receptor_OS_Homo_sapiens_OX_9606_GN_ADRB2_PE_1_SV_3.a3m`. 
+
+#### Ligand Preparation
+
+For the example ligand, we'll use the classic B2AR ligand carazolol.
+
+We'll save it as a SMILES file: smiles/carazolol.smi
+
+We'll use Schrodinger's (2025-2) ligprep to make the most likely protomer/tautomer at physiological pH. 
+
+```sh
+cd /mnt/data/dk/work/Boltz2-Overview
+mkdir -p sdf
+cd /mnt/data/dk/work/Boltz2-Overview/sdf
+ligprep -s 1 -i 2 -W i,-ph,7.4,-pht,0.0 -t 1  -HOST localhost:1 -ismi ../smiles/carazolol.smi -osd carazolol.sdf
+```
+Now we will convert this back to a SMILES file. 
+
+```sh
+cd /mnt/data/dk/work/Boltz2-Overview
+mkdir -p prepared_smiles
+$SCHRODINGER/utilities/structconvert sdf/carazolol.sdf prepared_smiles/carazolol.smi
+``` 
+#### Setting up the Boltz2 YAML File
+
+There are a few examples from the Boltz team on how to set up various types of YAML files (here)[https://github.com/jwohlwend/boltz/tree/main/examples].
+
+We'll use the one given in the `affinity.yaml` example, which looks like so generically: 
+
+```yaml
+version: 1
+sequences:
+  - protein:
+      id: A
+      sequence: <protein sequence>
+      msa: <path to .a3m>
+  - ligand:
+      id: L
+      smiles: "<prepared ligand smiles>"
+properties:
+  - affinity: { binder: L }
+```
+Our actual YAML lives here: `yaml/b2ar_carazolol_affinity.yaml`. 
+
+And looks like this: 
+
+```yaml
+version: 1
+sequences:
+  - protein:
+      id: A
+      sequence: MGQPGNGSAFLLAPNGSHAPDHDVTQERDEVWVVGMGIVMSLIVLAIVFGNVLVITAIAKFERLQTVTNYFITSLACADLVMGLAVVPFGAAHILMKMWTFGNFWCEFWTSIDVLCVTASIETLCVIAVDRYFAITSPFKYQSLLTKNKARVIILMVWIVSGLTSFLPIQMHWYRATHQEAINCYANETCCDFFTNQAYAIASSIVSFYVPLVIMVFVYSRVFQEAKRQLQKIDKSEGRFHVQNLSQVEQDGRTGHGLRRSSKFCLKEHKALKTLGIIMGTFTLCWLPFFIVNIVHVIQDNLIRKEVYILLNWIGYVNSGFNPLIYCRSPDFRIAFQELLCLRRSSLKAYGNGYSSNGNTGEQSGYHVEQEKENKLLCEDLPGTEDFVGHQGTVPSDNIDSQGRNCSTNDSLL
+      msa: /mnt/data/dk/work/Boltz2-Overview/msa/sp_P07550_ADRB2_HUMAN_Beta-2_adrenergic_receptor_OS_Homo_sapiens_OX_9606_GN_ADRB2_PE_1_SV_3.a3m
+  - ligand:
+      id: L
+      smiles: "CC(C)[NH2+]C[C@@H](O)COc1cccc2[nH]c3ccccc3c12"
+properties:
+  - affinity: { binder: L }
+```
+Now, we can run Boltz! We will use mostly default arguments here. The changes here primarily using our local cache and allow overriding of results.
+
+For now, we also have to specify`--no_kernels`, which disables optional Triton-based optimized kernels. This is primarily a compatibility/performance setting and is not intended to change the underlying Boltz2 model or YAML semantics. In practice, it should mainly affect execution speed and stability on a given system. I will look into this more later, but it is not a huge priority. 
+
+Also becareful about exporting the CUDA device on `Tobias`, there is some weirdness between what we see in `nvidia-smi -L` for device number versus the UUID. Be explicit and supply the UUID.
+
+```sh
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate /mnt/data/dk/boltz2-env
+
+export CUDA_VISIBLE_DEVICES=MIG-0c920aac-5e24-5455-9ebe-03a606d5713d
+export BOLTZ_CACHE=/mnt/data/dk/.cache/boltz
+
+cd /mnt/data/dk/work/Boltz2-Overview
+
+boltz predict yaml/b2ar_carazolol_affinity.yaml \
+  --out_dir boltz_predictions/b2ar_carazolol_boltz \
+  --cache "$BOLTZ_CACHE" \
+  --no_kernels \
+  --override
+```
 
