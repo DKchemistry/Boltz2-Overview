@@ -82,7 +82,7 @@ Here, we'll set up some basic examples of how to run Boltz2 on this machine.
 
 #### MSA Generation For An Example Protein
 
-For our protein target, we'll use B2AR, sourced from (UniProt)[https://rest.uniprot.org/unisave/P07550?format=fasta&versions=258].
+For our protein target, we'll use B2AR, sourced from [UniProt](https://rest.uniprot.org/unisave/P07550?format=fasta&versions=258).
 
 I've saved the fasta file to: `./fasta/B2AR.fasta`
 
@@ -124,7 +124,7 @@ $SCHRODINGER/utilities/structconvert sdf/carazolol.sdf prepared_smiles/carazolol
 ``` 
 #### Setting up the Boltz2 YAML File
 
-There are a few examples from the Boltz team on how to set up various types of YAML files (here)[https://github.com/jwohlwend/boltz/tree/main/examples].
+There are a few examples from the Boltz team on how to set up various types of YAML files [here](https://github.com/jwohlwend/boltz/tree/main/examples).
 
 We'll use the one given in the `affinity.yaml` example, which looks like so generically: 
 
