@@ -179,4 +179,4 @@ boltz predict yaml/b2ar_carazolol_affinity.yaml \
   --no_kernels \
   --override
 ```
-
+We can check out the results here: `boltz_predictions/b2ar_carazolol_boltz/boltz_results_b2ar_carazolol_affinity`. The output looks normal. 
