@@ -117,6 +117,8 @@ ligprep -s 1 -i 2 -W i,-ph,7.4,-pht,0.0 -t 1  -HOST localhost:1 -ismi ../smiles/
 ```
 Now we will convert this back to a SMILES file. 
 
+(As far as I understand, the above is using Epik classic, the newer Epik (Epik 7?) seems to support smi -> smi in the docs! Will have to test this at some point.)
+
 ```sh
 cd /mnt/data/dk/work/Boltz2-Overview
 mkdir -p prepared_smiles
