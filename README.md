@@ -1,108 +1,84 @@
-# Boltz2 Overview
+# Boltz2 on Tobias
 
-## Purpose
+This write up is to detail the install of Boltz2 on Tobias to use it in various projects. Because I had my home directory set up outside of /mnt/data and instead in a much smaller partition on our drives, it difficult to keep track of how I should be using Boltz2 on this machine. This is to make this easier.
 
-This repository documents the local Boltz2 inference setup on `tobias` for user `dk`, including:
-- environment activation
-- offline MSA generation
-- local databases
-- template usage
-- inference examples
-- smoke tests
-- troubleshooting
-
-## Host and storage layout
-
-- Hostname: `tobias`
-- User: `dk`
-- Root/home volume: `/` (~983 GB)
-- Large data volume: `/mnt/data` (~41.9 TB)
-
-Large persistent assets are intentionally stored under `/mnt/data/dk`:
-- conda envs
-- ColabFold/MMseqs databases
-- Boltz model cache
-- project working directories
-
-## Important paths
+## Core paths
 
 - Boltz2 env: `/mnt/data/dk/boltz2-env`
 - MSA env: `/mnt/data/dk/msa-env`
 - Offline database root: `/mnt/data/dk/colabfold_db`
 - Boltz cache: `/mnt/data/dk/.cache/boltz`
-- Example project: `/mnt/data/dk/boltz_gpr3_test`
 
-## Environment versions
+## What each thing is for
 
-### Boltz2 inference env
-Path: `/mnt/data/dk/boltz2-env`
+### Boltz2 env
 
+Use this env to run inference with `boltz predict`.
+
+Activate with:
+
+```
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate /mnt/data/dk/boltz2-env
+```
 - Python 3.10.18
 - boltz 2.2.0
 - torch 2.8.0
 
-### Local MSA env
-Path: `/mnt/data/dk/msa-env`
+### MSA env
 
+Use this env for local MSA generation with MMseqs / ColabFold tools.
+
+Activate with:
+
+```
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate /mnt/data/dk/msa-env
+```
 - Python 3.10.18
 - mmseqs2 18.8cc5c
 - colabfold 1.5.5
 - foldseek 10.941cd33
 
-## Offline database status
+### Offline databases
 
-Database root: `/mnt/data/dk/colabfold_db`
+Local MSA databases are stored at:
 
-Readiness markers present:
-- `DOWNLOADS_READY`
-- `UNIREF30_READY`
-- `COLABDB_READY`
-- `PDB_READY`
-- `PDB100_READY`
-- `PDB_MMCIF_READY`
+/mnt/data/dk/colabfold_db
 
-### Main sequence/MSA databases
+These were downloaded so that we can perform offline MSA generation as input to Boltz, without requiring the online webserver. 
 
-These are the main logical sequence databases used for local MSA generation:
-- `uniref30_2302_*`
-- `colabfold_envdb_202108_*`
+These were downloaded via: `/mnt/data/dk/setup_databases.sh`. I did not write this script myself, it is sourced from the [ColabFold GitHub](https://github.com/sokrypton/ColabFold/blob/main/setup_databases.sh?). Only some of these datasets are used for MSA generation:
 
-### Main structure/template resources
+	•	uniref30_2302
+	•	colabfold_envdb_202108
 
-These are the main structure/template resources:
-- `pdb100_230517*`
-- `pdb100_a3m.ffdata`
-- `pdb100_a3m.ffindex`
-- `pdb/`
+Other resources downloaded by the shell script are not strictly necessary for the Boltz2 workflow, but I haven't removed them. These are files like: 
 
-## Model cache
+	•	pdb100_230517
+	•	pdb100_foldseek_230517
+	•	local pdb/ mmCIF content
 
-Path: `/mnt/data/dk/.cache/boltz`
+It may be prudent to update the sequence relevant databases which we can check for here: 
 
-Observed files:
-- `boltz2_aff.ckpt`
-- `boltz2_conf.ckpt`
-- cached ligand molecule files
+- ColabFold MSA server database history:
+  https://github.com/sokrypton/ColabFold/wiki/MSA-Server-Database-History
 
-## Known example project
+### Boltz cache
 
-Path: `/mnt/data/dk/boltz_gpr3_test`
+Out of an abundance of precation, we set Boltz' cache in /mnt/data/ as it could otherwise default to home and overload the drive.
 
-Observed assets include:
-- FASTA inputs
-- YAML inputs
-- ligand TSV input
-- template YAMLs
-- local MSA files
-- run scripts
-- prior output directories
+Boltz checkpoints and cached molecule data are stored at:
 
-## Open questions
+/mnt/data/dk/.cache/boltz
 
-- Canonical smoke test command
-- Exact YAML conventions used in prior successful runs
-- Which workflows require explicit templates
-- Which workflows reuse precomputed MSAs
-- What the batch scripts do
-- Minimal documented workflow for a new project
+Set:
+
+export BOLTZ_CACHE=/mnt/data/dk/.cache/boltz
+
+### Example Workflows
+
+Here, we'll set up some basic examples of how to run Boltz2 on this machine. 
+
+For our protein target, we'll use B2AR.
 
